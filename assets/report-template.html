@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A股全维度早盘综合报告 - {{REPORT_DATE}}</title>
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-card: #1a2332;
+    --bg-card-hover: #1f2b3d;
+    --border-color: #2a3a4e;
+    --text-primary: #e8edf5;
+    --text-secondary: #8899aa;
+    --text-muted: #5a6a7a;
+    --accent-red: #ef4444;
+    --accent-green: #22c55e;
+    --accent-blue: #3b82f6;
+    --accent-yellow: #f59e0b;
+    --accent-purple: #a855f7;
+    --accent-cyan: #06b6d4;
+    --accent-orange: #f97316;
+    --bull: #ef4444;
+    --bear: #22c55e;
+    --neutral: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  .report-header {
+    text-align: center;
+    padding: 40px 20px 30px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .report-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-cyan));
+  }
+  .report-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .report-header .date {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+  .report-header .disclaimer {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  /* Score Banner */
+  .score-banner {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .score-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    transition: transform 0.2s;
+  }
+  .score-card:hover { transform: translateY(-2px); }
+  .score-card .label { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+  .score-card .value { font-size: 36px; font-weight: 800; }
+  .score-card .value.bull { color: var(--bull); }
+  .score-card .value.green { color: var(--accent-green); }
+  .score-card .value.yellow { color: var(--accent-yellow); }
+  .score-card .sub { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* Section */
+  .section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .icon { font-size: 20px; }
+
+  /* Signal Table */
+  .signal-table { width: 100%; border-collapse: collapse; }
+  .signal-table th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .signal-table td {
+    padding: 12px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(42, 58, 78, 0.5);
+    vertical-align: middle;
+  }
+  .signal-table tr:last-child td { border-bottom: none; }
+  .signal-table tr:hover { background: var(--bg-card-hover); }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .tag-bull { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+  .tag-bear { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+  .tag-neutral { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+  .tag-inflow { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+  .tag-outflow { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+  .tag-optimistic { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+  .tag-pessimistic { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+
+  /* Stars */
+  .stars { color: var(--accent-yellow); font-size: 13px; letter-spacing: 1px; }
+
+  /* Cross Validation */
+  .cross-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cross-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .cross-item .combo {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    margin-bottom: 8px;
+  }
+  .cross-item .result { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+  .cross-item .result strong { color: var(--text-primary); }
+
+  /* Resonance */
+  .resonance-box {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(168, 85, 247, 0.08));
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 16px;
+  }
+  .resonance-box .direction {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--bull);
+    margin-bottom: 6px;
+  }
+  .resonance-box .strength { font-size: 14px; color: var(--text-secondary); }
+  .resonance-box .confidence {
+    font-size: 13px;
+    color: var(--accent-green);
+    margin-top: 6px;
+  }
+
+  /* Operation Guide */
+  .op-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .op-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .op-item h4 {
+    font-size: 14px;
+    color: var(--accent-cyan);
+    margin-bottom: 10px;
+  }
+  .op-item p, .op-item li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+  }
+  .op-item ul { padding-left: 18px; }
+
+  /* Sector Config */
+  .sector-table { width: 100%; border-collapse: collapse; }
+  .sector-table th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .sector-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(42, 58, 78, 0.5);
+    color: var(--text-secondary);
+  }
+  .sector-table tr:last-child td { border-bottom: none; }
+  .sector-table .sector-name { color: var(--text-primary); font-weight: 600; }
+  .sector-table .focus { color: var(--bull); font-weight: 600; }
+  .sector-table .avoid { color: var(--bear); font-weight: 600; }
+
+  /* Risk Table */
+  .risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .risk-item {
+    background: rgba(245, 158, 11, 0.05);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .risk-item .risk-type {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-yellow);
+    margin-bottom: 4px;
+  }
+  .risk-item .risk-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .risk-item .risk-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* Summary Box */
+  .summary-box {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 2px solid var(--accent-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .summary-box .summary-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    margin-bottom: 16px;
+  }
+  .summary-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  .summary-row:last-child { margin-bottom: 0; }
+  .summary-row .label {
+    color: var(--text-secondary);
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+  .summary-row .value { color: var(--text-primary); font-weight: 500; }
+
+  /* Key Points */
+  .key-points {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .key-point {
+    background: rgba(59, 130, 246, 0.06);
+    border-left: 3px solid var(--accent-blue);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .key-point strong { color: var(--text-primary); }
+
+  /* Dimension Detail */
+  .dim-detail { margin-top: 12px; }
+  .dim-detail h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-purple);
+    margin-bottom: 8px;
+  }
+  .dim-detail ul {
+    list-style: none;
+    padding: 0;
+  }
+  .dim-detail li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 4px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+  .dim-detail li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent-purple);
+  }
+  .dim-detail li strong { color: var(--text-primary); }
+
+  /* Data Grid */
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .data-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+  .data-item .d-label { font-size: 11px; color: var(--text-muted); }
+  .data-item .d-value { font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .data-item .d-value.up { color: var(--bull); }
+  .data-item .d-value.down { color: var(--bear); }
+  .data-item .d-change { font-size: 11px; margin-top: 2px; }
+  .data-item .d-change.up { color: var(--bull); }
+  .data-item .d-change.down { color: var(--bear); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+    margin-top: 20px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .score-banner { grid-template-columns: 1fr; }
+    .cross-grid { grid-template-columns: 1fr; }
+    .op-grid { grid-template-columns: 1fr; }
+    .risk-grid { grid-template-columns: 1fr; }
+    .key-points { grid-template-columns: 1fr; }
+    .report-header h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ==================== Header ==================== -->
+<div class="report-header">
+  <h1>A股全维度早盘综合报告</h1>
+  <div class="date">{{REPORT_DATE_FULL}}</div>
+  <div class="disclaimer">⚠ 本报告为综合研判，不构成投资建议。投资有风险，入市需谨慎。</div>
+</div>
+
+<!-- ==================== Score Banner ==================== -->
+<div class="score-banner">
+  <div class="score-card">
+    <div class="label">综合评分</div>
+    <div class="value {{SCORE_COLOR_CLASS}}">{{TOTAL_SCORE}}</div>
+    <div class="sub">{{SCORE_LABEL}}</div>
+  </div>
+  <div class="score-card">
+    <div class="label">仓位建议</div>
+    <div class="value {{POSITION_COLOR_CLASS}}">{{POSITION_ADVICE}}</div>
+    <div class="sub">{{POSITION_SUB}}</div>
+  </div>
+  <div class="score-card">
+    <div class="label">风险等级</div>
+    <div class="value {{RISK_COLOR_CLASS}}">{{RISK_LEVEL}}</div>
+    <div class="sub">{{RISK_SUB}}</div>
+  </div>
+</div>
+
+<!-- ==================== Section 1: 六维度信号速览 ==================== -->
+<div class="section">
+  <div class="section-title"><span class="icon">📊</span> 一、六维度信号速览</div>
+  <table class="signal-table">
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>信号方向</th>
+        <th>影响程度</th>
+        <th>核心结论</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{SIGNAL_TABLE_ROWS}}
+    </tbody>
+  </table>
+  <div style="margin-top:16px; display:flex; gap:24px; font-size:14px;">
+    <div><span style="color:var(--text-secondary)">多空统计：</span>{{BULL_BEAR_STATS}}</div>
+    <div><span style="color:var(--text-secondary)">综合评分：</span>{{TOTAL_SCORE_DISPLAY}}</div>
+  </div>
+</div>
+
+<!-- ==================== Section 2: 各维度详细分析 ==================== -->
+<div class="section">
+  <div class="section-title"><span class="icon">🔍</span> 二、各维度详细分析</div>
+
+  {{DIMENSION_DETAILS}}
+
+</div>
+
+<!-- ==================== Section 3: 交叉验证 ==================== -->
+<div class="section">
+  <div class="section-title"><span class="icon">⚡</span> 三、交叉验证分析</div>
+
+  <div class="cross-grid">
+    {{CROSS_VALIDATION_ITEMS}}
+  </div>
+
+  <div class="resonance-box">
+    <div class="direction">{{RESONANCE_DIRECTION}}</div>
+    <div class="strength">{{RESONANCE_STRENGTH}}</div>
+    <div class="confidence">{{RESONANCE_CONFIDENCE}}</div>
+  </div>
+</div>
+
+<!-- ==================== Section 4: 操作指导 ==================== -->
+<div class="section">
+  <div class="section-title"><span class="icon">🎯</span> 四、当日操作指导</div>
+
+  <div class="op-grid">
+    <div class="op-item">
+      <h4>综合研判</h4>
+      <ul>
+        {{JUDGMENT_ITEMS}}
+      </ul>
+    </div>
+    <div class="op-item">
+      <h4>关键点位</h4>
+      <ul>
+        {{KEY_LEVEL_ITEMS}}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Section 5: 板块配置 ==================== -->
+<div class="section">
+  <div class="section-title"><span class="icon">🏗️</span> 五、板块配置策略</div>
+  <table class="sector-table">
+    <thead>
+      <tr>
+        <th>配置方向</th>
+        <th>板块</th>
+        <th>逻辑</th>
+        <th>仓位占比</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{SECTOR_TABLE_ROWS}}
+    </tbody>
+  </table>
+</div>
+
+<!-- ==================== Section 6: 具体操作计划 ==================== -->
+<div class="section">
+  <div class="section-title"><span class="icon">⏰</span> 六、具体操作计划</div>
+  <table class="signal-table">
+    <thead>
+      <tr>
+        <th>时段</th>
+        <th>操作</th>
+        <th>标的/方向</th>
+        <th>逻辑</th>
+        <th>止损位</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{OPERATION_PLAN_ROWS}}
+    </tbody>
+  </table>
+</div>
+
+<!-- ==================== Section 7: 风险提示 ==================== -->
+<div class="section">
+  <div class="section-title"><span class="icon">⚠️</span> 七、风险提示</div>
+  <div class="risk-grid">
+    {{RISK_ITEMS}}
+  </div>
+</div>
+
+<!-- ==================== Section 8: 关键观察点 ==================== -->
+<div class="section">
+  <div class="section-title"><span class="icon">👁️</span> 八、关键观察点</div>
+  <div class="key-points">
+    {{KEY_OBSERVATION_ITEMS}}
+  </div>
+</div>
+
+<!-- ==================== Section 9: 一句话总结 ==================== -->
+<div class="summary-box">
+  <div class="summary-title">📝 今日一句话</div>
+  {{SUMMARY_ROWS}}
+</div>
+
+<!-- ==================== Footer ==================== -->
+<div class="footer">
+  <p>数据来源：东方财富、同花顺、证券时报、新浪财经、国家统计局、中国人民银行、海关总署等公开渠道</p>
+  <p>报告生成时间：{{GENERATE_DATE}} | 数据截止：{{DATA_CUTOFF_DATE}}</p>
+  <p style="margin-top:8px; color:var(--accent-red);">⚠ 免责声明：本报告基于公开数据综合分析，仅供参考学习，不构成任何投资建议。投资有风险，入市需谨慎。</p>
+</div>
+
+</div>
+</body>
+</html>
