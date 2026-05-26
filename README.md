@@ -283,7 +283,6 @@ $$R_i = \alpha + \sum_{j=1}^{6} \beta_j F_j + \epsilon$$
 
 - **GitHub Issues**: [提交问题](https://github.com/laozdao/astock-morning-dao/issues)
 - **Email**: laozdao@126.com
-- **微信公众号**: [老子道量化研究](https://laozdao.github.io/)
 
 ---
 
